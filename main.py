@@ -1,3 +1,4 @@
+from collections import namedtuple
 from functools import partial
 import json
 import logging
@@ -7,8 +8,8 @@ import sys
 import darkdetect
 from PySide6 import QtCore
 from PySide6.QtGui import QAction, QIcon
-from PySide6.QtWidgets import QApplication, QMenu
-from PySide6.QtWidgets import QSystemTrayIcon, QWidget
+from PySide6.QtWidgets import QApplication, QMenu, QMessageBox
+from PySide6.QtWidgets import QSystemTrayIcon, QTableWidgetItem, QWidget
 from serial.tools import list_ports
 
 from forms.SettingsForm import Ui_Form as SettingsForm
@@ -24,6 +25,8 @@ SERIAL_BAUD = [
     115200,
     921600
 ]
+
+TerminalSetting = namedtuple('TerminalSetting', ['alias', 'path', 'arguments'])
 
 
 class CommandLauncher:
@@ -117,11 +120,13 @@ class SetupTerminalWindow(QWidget, SetupTerminalForm):
         super(SetupTerminalWindow, self).__init__()
         self.setupUi(self)
         self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.settings_window = AddTerminalWindow()
         self.pushButton_add.clicked.connect(self._add_clicked)
 
     def _add_clicked(self):
-        settings_window = AddTerminalWindow()
-        settings_window.show()
+        setting = self.settings_window.exec()
+        item = QTableWidgetItem(setting.alias, setting.path, setting.arguments)
+        self.tableWidget.setItem(0, 0, item)
 
 
 class MainApplication(QApplication):
@@ -165,10 +170,37 @@ class MainApplication(QApplication):
 
 
 class AddTerminalWindow(QWidget, AddTerminalForm):
-    def __init__(self):
+    def __init__(self, term_setting=None):
         super(AddTerminalWindow, self).__init__()
         self.setupUi(self)
-        self.pushButton_ok.clicked.connect(QApplication.instance().quit)
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+        self.term_setting = None
+        if term_setting:
+            self._preload_fields(term_setting)
+        self.msgbox = QMessageBox()
+        self.pushButton_ok.clicked.connect(self._ok_clicked)
+
+    def _preload_fields(self):
+        self.lineEdit_alias.setText(self.term_setting.alias)
+        self.lineEdit_arguments.setText(self.term_setting.arguments)
+        self.lineEdit_path.setText(self.term_setting.path)
+
+    def _ok_clicked(self):
+        if not self.lineEdit_alias.text():
+            self.msgbox.setText('Empty alias')
+            self.msgbox.setInformativeText('Alias line can\'t be empty!')
+            self.msgbox.setIcon(QMessageBox.Warning)
+            self.msgbox.setWindowTitle('Error')
+            self.msgbox.show()
+            return
+        alias = self.lineEdit_alias.text()
+        path = self.lineEdit_path.text()
+        arguments = self.lineEdit_arguments.text()
+        self.term_setting = TerminalSetting(alias, path, arguments)
+
+    def exec(self):
+        super().exec()
+        return self.term_setting
 
 
 class TrayApplication(QSystemTrayIcon):
