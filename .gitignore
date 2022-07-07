@@ -1,0 +1,12 @@
+venv/
+.vscode/
+.idea/
+__pycache__/
+.qt_for_python/
+*.pyc
+*.pyd
+resources/ico/
+forms/
+settings.json
+*.png
+*.xcf
