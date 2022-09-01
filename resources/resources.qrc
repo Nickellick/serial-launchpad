@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="icons">
+        <file alias="logo_black.png">ico/logo_256_black.png</file>
+        <file alias="logo_white.png">ico/logo_256_white.png</file>
+    </qresource>
+</RCC>

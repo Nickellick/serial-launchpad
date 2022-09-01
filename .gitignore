@@ -10,3 +10,7 @@ forms/
 settings.json
 *.png
 *.xcf
+build/
+dist/
+*.spec
+rcc.py

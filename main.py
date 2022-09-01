@@ -2,11 +2,13 @@ from collections import namedtuple
 from functools import partial
 import json
 import logging
+import os
 import subprocess
 import sys
 
 import darkdetect
 from PySide6 import QtCore
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox
 from PySide6.QtWidgets import QSystemTrayIcon, QTableWidgetItem, QWidget
@@ -17,6 +19,7 @@ from forms.ConnectionForm import Ui_Form as ConnectionForm
 from forms.TerminalSettingsAddForm import Ui_Form as AddTerminalForm
 from forms.TerminalSettingsForm import Ui_Form as SetupTerminalForm
 from QSerialNotifier import SerialNotifier
+import resources.rcc
 
 THREAD_POOL = []
 
@@ -124,7 +127,10 @@ class SetupTerminalWindow(QWidget, SetupTerminalForm):
         self.pushButton_add.clicked.connect(self._add_clicked)
 
     def _add_clicked(self):
-        setting = self.settings_window.exec()
+        self.settings_window.show()
+
+    @Slot(TerminalSetting)
+    def _item_added(self, setting):
         item = QTableWidgetItem(setting.alias, setting.path, setting.arguments)
         self.tableWidget.setItem(0, 0, item)
 
@@ -196,7 +202,7 @@ class AddTerminalWindow(QWidget, AddTerminalForm):
         alias = self.lineEdit_alias.text()
         path = self.lineEdit_path.text()
         arguments = self.lineEdit_arguments.text()
-        self.term_setting = TerminalSetting(alias, path, arguments)
+        term_setting = TerminalSetting(alias, path, arguments)
 
     def exec(self):
         super().exec()
@@ -281,6 +287,13 @@ class TrayApplication(QSystemTrayIcon):
         )
 
 
+def normalize_path(path):
+    if getattr(sys, 'frozen', False):
+        return os.path.join(sys._MEIPASS, path)
+    else:
+        return path
+
+
 def main():
     logging.basicConfig(
         format='%(asctime)s\t[%(levelname)s]: %(message)s',
@@ -292,9 +305,11 @@ def main():
 
     # Adding an icon
     if darkdetect.isLight():
-        icon = QIcon("resources/ico/logo_256_white.png")
+        # icon = QIcon(normalize_path("resources/ico/logo_256_black.png"))
+        icon = QIcon(':icons/logo_black.png')
     else:
-        icon = QIcon("resources/ico/logo_256.png")
+        # icon = QIcon(normalize_path("resources/ico/logo_256_white.png"))
+        icon = QIcon(':icons/logo_white.png')
     icon.setIsMask(True)
     logging.debug(f'Is icon mask? {icon.isMask()}')
 
