@@ -8,7 +8,7 @@ import sys
 
 import darkdetect
 from PySide6 import QtCore
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QSettings, Slot
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox
 from PySide6.QtWidgets import QSystemTrayIcon, QTableWidgetItem, QWidget
@@ -287,14 +287,17 @@ class TrayApplication(QSystemTrayIcon):
         )
 
 
-def normalize_path(path):
-    if getattr(sys, 'frozen', False):
-        return os.path.join(sys._MEIPASS, path)
+def set_autostart(value):
+    run_path = 'HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
+    setting = QSettings(run_path, QSettings.NativeFormat)
+    if value:
+        setting.setValue("SerialLauncher", f'"{os.path.abspath(sys.argv[0])}"')
     else:
-        return path
+        setting.remove("SerialLauncher")
 
 
 def main():
+    set_autostart(True)
     logging.basicConfig(
         format='%(asctime)s\t[%(levelname)s]: %(message)s',
         stream=sys.stdout,
